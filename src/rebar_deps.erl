@@ -573,6 +573,16 @@ init_p4_settings(Basename) ->
                                  ++ "-Rebar-automated-download"
                      end}.
 
+ensure_source_root(Url) ->
+  case application:get_env(rebar, deps_source_root) of
+  {ok, DepsSourceRoot} ->
+    Dirname = filename:basename(filename:dirname(Url)),
+    Basename = filename:basename(Url),
+    filename:join([DepsSourceRoot, Dirname, Basename]);
+  _ ->
+    Url
+  end.
+
 download_source(AppDir, {p4, Url}) ->
     download_source(AppDir, {p4, Url, "#head"});
 download_source(AppDir, {p4, Url, Rev}) ->
@@ -602,17 +612,17 @@ download_source(AppDir, {git, Url, ""}) ->
     download_source(AppDir, {git, Url, {branch, "HEAD"}});
 download_source(AppDir, {git, Url, {branch, Branch}}) ->
     ok = filelib:ensure_dir(AppDir),
-    rebar_utils:sh(?FMT("git clone -n ~s ~s", [Url, filename:basename(AppDir)]),
+    rebar_utils:sh(?FMT("git clone -n ~s ~s", [ensure_source_root(Url), filename:basename(AppDir)]),
                    [{cd, filename:dirname(AppDir)}]),
     rebar_utils:sh(?FMT("git checkout -q origin/~s", [Branch]), [{cd, AppDir}]);
 download_source(AppDir, {git, Url, {tag, Tag}}) ->
     ok = filelib:ensure_dir(AppDir),
-    rebar_utils:sh(?FMT("git clone -n ~s ~s", [Url, filename:basename(AppDir)]),
+    rebar_utils:sh(?FMT("git clone -n ~s ~s", [ensure_source_root(Url), filename:basename(AppDir)]),
                    [{cd, filename:dirname(AppDir)}]),
     rebar_utils:sh(?FMT("git checkout -q ~s", [Tag]), [{cd, AppDir}]);
 download_source(AppDir, {git, Url, Rev}) ->
     ok = filelib:ensure_dir(AppDir),
-    rebar_utils:sh(?FMT("git clone -n ~s ~s", [Url, filename:basename(AppDir)]),
+    rebar_utils:sh(?FMT("git clone -n ~s ~s", [ensure_source_root(Url), filename:basename(AppDir)]),
                    [{cd, filename:dirname(AppDir)}]),
     rebar_utils:sh(?FMT("git checkout -q ~s", [Rev]), [{cd, AppDir}]);
 download_source(AppDir, {bzr, Url, Rev}) ->
